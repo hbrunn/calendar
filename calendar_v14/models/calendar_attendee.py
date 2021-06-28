@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 class Attendee(models.Model):
     """ Calendar Attendee Information """
 
-    _name = "calendar.attendee"
+    _inherit = "calendar.attendee"
     _rec_name = "common_name"
     _description = "Calendar Attendee Information"
 

@@ -54,7 +54,7 @@ class Meeting(models.Model):
     _name = "calendar.event"
     _description = "Calendar Event"
     _order = "start desc"
-    _inherit = ["mail.thread"]
+    _inherit = ["calendar.event", "mail.thread"]
 
     @api.model
     def default_get(self, fields):
@@ -126,7 +126,7 @@ class Meeting(models.Model):
 
     @api.model
     def _get_recurrent_fields(self):
-        return {
+        return [
             "byday",
             "until",
             "rrule_type",
@@ -145,24 +145,24 @@ class Meeting(models.Model):
             "su",
             "day",
             "weekday",
-        }
+        ]
 
     @api.model
     def _get_time_fields(self):
-        return {"start", "stop", "start_date", "stop_date"}
+        return ["start", "stop", "start_date", "stop_date"]
 
     @api.model
     def _get_custom_fields(self):
         all_fields = self.fields_get(attributes=["manual"])
-        return {fname for fname in all_fields if all_fields[fname]["manual"]}
+        return [fname for fname in all_fields if all_fields[fname]["manual"]]
 
     @api.model
     def _get_public_fields(self):
         return (
             self._get_recurrent_fields()
-            | self._get_time_fields()
-            | self._get_custom_fields()
-            | {
+            + self._get_time_fields()
+            + self._get_custom_fields()
+            + [
                 "id",
                 "active",
                 "allday",
@@ -173,7 +173,7 @@ class Meeting(models.Model):
                 "rrule",
                 "recurrence_id",
                 "show_as",
-            }
+            ]
         )
 
     @api.model
