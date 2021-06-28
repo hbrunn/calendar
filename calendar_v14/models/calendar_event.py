@@ -428,6 +428,7 @@ class Meeting(models.Model):
     weekday = fields.Selection(
         WEEKDAY_SELECTION, compute="_compute_recurrence", readonly=False
     )
+    week_list = fields.Selection(related="weekday", string="Day of week")
     byday = fields.Selection(compute="_compute_recurrence", readonly=False)
     until = fields.Date(compute="_compute_recurrence", readonly=False)
 
