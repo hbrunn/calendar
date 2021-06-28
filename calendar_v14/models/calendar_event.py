@@ -55,6 +55,7 @@ class Meeting(models.Model):
     _description = "Calendar Event"
     _order = "start desc"
     _inherit = ["calendar.event", "mail.thread"]
+    _active_name = "active"
 
     @api.model
     def default_get(self, fields):
@@ -247,9 +248,6 @@ class Meeting(models.Model):
 
     name = fields.Char("Meeting Subject", required=True)
 
-    attendee_status = fields.Selection(
-        Attendee.STATE_SELECTION, string="Attendee Status", compute="_compute_attendee"
-    )
     display_time = fields.Char("Event Time", compute="_compute_display_time")
     start = fields.Datetime(
         "Start",
@@ -429,11 +427,6 @@ class Meeting(models.Model):
         BYDAY_SELECTION, compute="_compute_recurrence", readonly=False
     )
     until = fields.Date(compute="_compute_recurrence", readonly=False)
-
-    def _compute_attendee(self):
-        for meeting in self:
-            attendee = meeting._find_my_attendee()
-            meeting.attendee_status = attendee.state if attendee else "needsAction"
 
     def _compute_display_time(self):
         for meeting in self:
@@ -1043,7 +1036,7 @@ class Meeting(models.Model):
     ):
         groupby = [groupby] if isinstance(groupby, str) else groupby
         grouped_fields = {group_field.split(":")[0] for group_field in groupby}
-        private_fields = grouped_fields - self._get_public_fields()
+        private_fields = grouped_fields - set(self._get_public_fields())
         if not self.env.su and private_fields:
             raise AccessError(
                 _(
