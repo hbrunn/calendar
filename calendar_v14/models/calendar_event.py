@@ -18,8 +18,6 @@ from odoo.addons.base.models.res_partner import _tz_get
 
 from .calendar_attendee import Attendee
 from .calendar_recurrence import (
-    BYDAY_SELECTION,
-    END_TYPE_SELECTION,
     MONTH_BY_SELECTION,
     RRULE_TYPE_SELECTION,
     WEEKDAY_SELECTION,
@@ -231,7 +229,9 @@ class Meeting(models.Model):
         """ Get the duration value between the 2 given dates. """
         if not start or not stop:
             return 0
-        duration = (stop - start).total_seconds() / 3600
+        duration = (
+            fields.Datetime.from_string(stop) - fields.Datetime.from_string(start)
+        ).total_seconds() / 3600
         return round(duration, 2)
 
     def _compute_is_highlighted(self):
@@ -377,7 +377,12 @@ class Meeting(models.Model):
     # when recurrence_id is not created yet.
     # If some of these fields are set and recurrence_id does not exists,
     # a `calendar.recurrence.rule` will be dynamically created.
-    rrule = fields.Char("Recurrent Rule", compute="_compute_recurrence", readonly=False)
+    rrule = fields.Char(
+        "Recurrent Rule",
+        compute="_compute_recurrence",
+        readonly=False,
+        compute_sudo=False,
+    )
     rrule_type = fields.Selection(
         RRULE_TYPE_SELECTION,
         string="Recurrence",
@@ -389,7 +394,7 @@ class Meeting(models.Model):
         _tz_get, string="Timezone", compute="_compute_recurrence", readonly=False
     )
     end_type = fields.Selection(
-        END_TYPE_SELECTION,
+        selection_add=[("forever", "Forever")],
         string="Recurrence Termination",
         compute="_compute_recurrence",
         readonly=False,
@@ -423,9 +428,7 @@ class Meeting(models.Model):
     weekday = fields.Selection(
         WEEKDAY_SELECTION, compute="_compute_recurrence", readonly=False
     )
-    byday = fields.Selection(
-        BYDAY_SELECTION, compute="_compute_recurrence", readonly=False
-    )
+    byday = fields.Selection(compute="_compute_recurrence", readonly=False)
     until = fields.Date(compute="_compute_recurrence", readonly=False)
 
     def _compute_display_time(self):
