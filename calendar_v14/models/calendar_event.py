@@ -1,6 +1,7 @@
 # flake8: noqa
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import collections
 import logging
 import math
 from datetime import timedelta
@@ -93,6 +94,10 @@ class Meeting(models.Model):
         ):
             defaults["res_id"] = self.env.context["active_id"]
 
+        # support v13 calendars
+        if fields and "start_datetime" in fields and "start_datetime" not in defaults:
+            defaults["start_datetime"] = defaults["start"]
+
         return defaults
 
     @api.model
@@ -172,6 +177,7 @@ class Meeting(models.Model):
                 "rrule",
                 "recurrence_id",
                 "show_as",
+                "opportunity_id",
             ]
         )
 
@@ -428,7 +434,7 @@ class Meeting(models.Model):
     weekday = fields.Selection(
         WEEKDAY_SELECTION, compute="_compute_recurrence", readonly=False
     )
-    week_list = fields.Selection(related="weekday", string="Day of week")
+    week_list = fields.Selection(string="Day of week")
     byday = fields.Selection(compute="_compute_recurrence", readonly=False)
     until = fields.Date(compute="_compute_recurrence", readonly=False)
 
@@ -1043,15 +1049,10 @@ class Meeting(models.Model):
         private_fields = grouped_fields - set(self._get_public_fields())
         if not self.env.su and private_fields:
             raise AccessError(
-                _(
-                    "Grouping by %s is not allowed.",
-                    ", ".join(
-                        [
-                            self._fields[field_name].string
-                            for field_name in private_fields
-                        ]
-                    ),
-                )
+                _("Grouping by %s is not allowed.",)
+                % ", ".join(
+                    [self._fields[field_name].string for field_name in private_fields]
+                ),
             )
         return super(Meeting, self).read_group(
             domain,
@@ -1098,7 +1099,10 @@ class Meeting(models.Model):
         self.ensure_one()
         return (self.start, self.stop)
 
-    def _sync_activities(self, fields):
+    def _sync_activities(self, fields=None, values=None):
+        # pass v13 calls to super
+        if values and not fields or fields and isinstance(fields, collections.Mapping):
+            return super()._sync_activities(fields or values)
         # update activities
         for event in self:
             if event.activity_ids:
