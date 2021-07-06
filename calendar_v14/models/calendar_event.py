@@ -96,7 +96,7 @@ class Meeting(models.Model):
 
         # support v13 calendars
         if fields and "start_datetime" in fields and "start_datetime" not in defaults:
-            defaults["start_datetime"] = defaults["start"]
+            defaults["start_datetime"] = defaults.get("start")
 
         return defaults
 
