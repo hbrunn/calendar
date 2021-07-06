@@ -95,8 +95,20 @@ class Meeting(models.Model):
             defaults["res_id"] = self.env.context["active_id"]
 
         # support v13 calendars
-        if fields and "start_datetime" in fields and "start_datetime" not in defaults:
-            defaults["start_datetime"] = defaults.get("start")
+        if (
+            fields
+            and "start_datetime" in fields
+            and "start_datetime" not in defaults
+            and "start" in defaults
+        ):
+            defaults["start_datetime"] = defaults["start"]
+        if (
+            fields
+            and "stop_datetime" in fields
+            and "stop_datetime" not in defaults
+            and "stop" in defaults
+        ):
+            defaults["stop_datetime"] = defaults["stop"]
 
         return defaults
 
